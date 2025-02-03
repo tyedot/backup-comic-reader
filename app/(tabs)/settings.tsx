@@ -4,16 +4,16 @@ import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Audio } from "expo-av";
-import useComicStore from "../hooks/useComicStore"; // ✅ Zustand store
+import useComicStore from "../hooks/useComicStore";
 
 export default function Settings() {
   const [darkMode, setDarkMode] = useState(false);
   const [musicVolume, setMusicVolume] = useState(1);
-  const { isVertical, setIsVertical, setLastReadPage } = useComicStore(); // ✅ Get Zustand state setter
+  const { isVertical, setIsVertical } = useComicStore();
   const router = useRouter();
   const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  // ✅ Load saved settings on mount
   useEffect(() => {
     const loadSettings = async () => {
       const savedVolume = await AsyncStorage.getItem("musicVolume");
@@ -22,89 +22,70 @@ export default function Settings() {
     loadSettings();
   }, []);
 
-  // ✅ Play music only after volume is set
   useEffect(() => {
-    playBackgroundMusic();
-  }, [musicVolume]);
+    const playBackgroundMusic = async () => {
+      try {
+        const { sound: newSound } = await Audio.Sound.createAsync(
+          require("../../assets/audio/background.mp3"),
+          { shouldPlay: true, isLooping: true, volume: musicVolume }
+        );
+        setSound(newSound);
+        setIsPlaying(true);
+        await newSound.playAsync();
+      } catch (error) {
+        console.error("Error playing music:", error);
+      }
+    };
 
-  // ✅ Cleanup on unmount
-  useEffect(() => {
+    playBackgroundMusic();
+
     return () => {
       if (sound) {
         sound.unloadAsync();
       }
     };
-  }, [sound]);
+  }, []);
 
-  // ✅ Toggle Dark Mode
+  useEffect(() => {
+    if (sound) {
+      sound.setVolumeAsync(musicVolume);
+    }
+  }, [musicVolume]);
+
   const toggleDarkMode = () => setDarkMode((prev) => !prev);
 
-  // ✅ Toggle Reading Mode (Vertical <-> Horizontal)
   const toggleReadingMode = () => setIsVertical(!isVertical);
 
-  // ✅ Reset last read page & navigate to first page
-  const resetToFirstPage = async () => {
-    try {
-      await AsyncStorage.removeItem("lastReadPage"); // ✅ Clear stored page
-      setLastReadPage(1); // ✅ Reset Zustand state
-      console.log("Reset to first page!");
-  
-      // ✅ Navigate to the first comic page
-      router.back(); // ✅ Go back to comic reader, letting it reset
-  } catch (error) {
-    console.error("Error resetting last read page:", error);
-  }
-};
-
-  // ✅ Adjust Music Volume
   const adjustMusicVolume = async (value: number) => {
     setMusicVolume(value);
     await AsyncStorage.setItem("musicVolume", value.toString());
 
-    if (!sound) {
-      console.warn("No sound instance found. Initializing music...");
-      await playBackgroundMusic();
-    } else {
+    if (sound) {
       await sound.setVolumeAsync(value);
     }
   };
 
-  // ✅ Play background music
-  const playBackgroundMusic = async () => {
-    try {
-      if (!sound) {
-        const { sound: newSound } = await Audio.Sound.createAsync(
-          require("../../assets/audio/background.mp3"), // ✅ Ensure correct file path
-          { shouldPlay: true, isLooping: true } // ✅ Pass valid options
-        );
-  
-        setSound(newSound);
-        await newSound.playAsync(); // ✅ Start playback
-      } else {
-        await sound.replayAsync(); // ✅ Restart the audio
-      }
-    } catch (error) {
-      console.error("Error playing music:", error);
-    }
-  };
-  
-
-  // ✅ Stop background music (pause instead of unload)
-  const stopBackgroundMusic = async () => {
-    if (sound) {
-      try {
-        await sound.stopAsync(); // ✅ Stop the music
-        await sound.unloadAsync(); // ✅ Unload to free memory
-        setSound(null); // ✅ Clear state
-        console.log("Music stopped and unloaded.");
-      } catch (error) {
-        console.error("Error stopping music:", error);
+  const toggleMusicPlayback = async () => {
+    if (isPlaying) {
+      if (sound) {
+        try {
+          await sound.stopAsync();
+          setIsPlaying(false);
+        } catch (error) {
+          console.error("Error stopping music:", error);
+        }
       }
     } else {
-      console.warn("No sound is playing.");
+      if (sound) {
+        try {
+          await sound.playAsync();
+          setIsPlaying(true);
+        } catch (error) {
+          console.error("Error playing music:", error);
+        }
+      }
     }
   };
-  
 
   return (
     <View style={[styles.container, darkMode ? styles.dark : { backgroundColor: "#fff" }]}>
@@ -125,9 +106,7 @@ export default function Settings() {
         <Slider minimumValue={0} maximumValue={1} step={0.1} value={musicVolume} onValueChange={adjustMusicVolume} />
       </View>
 
-      <Button title="Play Music" onPress={playBackgroundMusic} />
-      <Button title="Stop Music" onPress={stopBackgroundMusic} />
-      <Button title="Reset to First Page" onPress={resetToFirstPage} />
+      <Button title={isPlaying ? "Stop Music" : "Play Music"} onPress={toggleMusicPlayback} />
       <Button title="Go Back" onPress={() => router.back()} />
     </View>
   );

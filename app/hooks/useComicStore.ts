@@ -1,21 +1,22 @@
-import { create } from "zustand";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ComicStore {
+  currentPage: number;
   lastReadPage: number;
-  setLastReadPage: (page: number) => void; // ✅ Add setter function
   isVertical: boolean;
-  setIsVertical: (value: boolean) => void;
+  setCurrentPage: (page: number) => void;
+  setLastReadPage: (page: number) => void;
+  setIsVertical: (isVertical: boolean) => void;
 }
 
 const useComicStore = create<ComicStore>((set) => ({
-  lastReadPage: 1, // ✅ Default to first page
-  setLastReadPage: async (page) => {
-    await AsyncStorage.setItem("lastReadPage", page.toString()); // ✅ Save to AsyncStorage
-    set({ lastReadPage: page });
-  },
+  currentPage: 1,
+  lastReadPage: 1,
   isVertical: true,
-  setIsVertical: (value) => set({ isVertical: value }),
+  setCurrentPage: (page: number) => set({ currentPage: page }),
+  setLastReadPage: (page: number) => set  ({ lastReadPage: page }),
+  setIsVertical: (isVertical: boolean) => set({ isVertical }),
 }));
 
 export default useComicStore;
