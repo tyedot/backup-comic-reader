@@ -31,8 +31,15 @@ export default function Settings() {
     toggleTheme();
   };
 
+  // ✅ Add logs for Reading Mode Button
   const toggleReadingMode = async () => {
     const currentPage = await AsyncStorage.getItem("currentPage");
+
+    console.log("🔄 Reading Mode Button Pressed");
+    console.log(`📄 Current Page: ${currentPage || 0}`);
+    console.log(`📚 Current Mode: ${isVertical ? "Vertical" : "Horizontal"}`);
+    console.log(`➡️ Switching to: ${!isVertical ? "Vertical" : "Horizontal"}`);
+
     if (currentPage) {
       await AsyncStorage.setItem("lastReadPageBeforeModeChange", currentPage);
     }
@@ -91,11 +98,10 @@ export default function Settings() {
       <Button title={isPlaying ? "Pause Music" : "Play Music"} onPress={toggleMusicPlayback} />
       <Button title="Go Back" onPress={() => router.back()} />
 
-      {/* ✅ Overlay with pointerEvents to allow button clicks */}
       {isDark && (
         <View
           style={[styles.overlay, { opacity: themeStyles.overlayOpacity }]}
-          pointerEvents="none"  // ✅ Allows interactions to pass through
+          pointerEvents="none"
         />
       )}
     </View>
@@ -119,6 +125,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: "black",
-    pointerEvents: "none", // ✅ Ensures buttons are responsive
+    pointerEvents: "none",
   },
 });
