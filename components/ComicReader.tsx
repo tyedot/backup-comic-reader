@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { ScrollView, View, Dimensions, Image, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import useComicStore from '../app/hooks/useComicStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAudio } from '../context/AudioContext';
 
 const screenWidth = Dimensions.get('window').width;
 const screenHeight = Dimensions.get('window').height;
@@ -16,6 +17,7 @@ const comicPages = [
 export default function ComicReader() {
   const { currentPage, lastReadPage, isVertical, setCurrentPage, setLastReadPage } = useComicStore();
   const scrollViewRef = useRef<ScrollView>(null);
+  const { playMusic } = useAudio();
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -34,6 +36,10 @@ export default function ComicReader() {
       });
     }
   }, [isVertical, lastReadPage]);
+
+  useEffect(() => {
+    playMusic();
+  }, [playMusic]);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const page = isVertical

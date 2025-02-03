@@ -1,38 +1,45 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
-import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
-import "react-native-reanimated";
-import { useColorScheme } from "@/hooks/useColorScheme";
-
-SplashScreen.preventAutoHideAsync();
+import React, { useEffect } from 'react';
+import { ThemeProvider } from 'styled-components';
+import { DarkTheme, DefaultTheme } from '@react-navigation/native';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
+import { AudioProvider } from '../context/AudioContext';
+import { useColorScheme } from 'react-native';
 
 export default function RootLayout() {
+  const [loaded, setLoaded] = React.useState(false);
   const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-  });
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+    async function loadResourcesAndDataAsync() {
+      try {
+        // Load resources and data here
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setLoaded(true);
+        SplashScreen.hideAsync();
+      }
     }
-  }, [loaded]);
+
+    loadResourcesAndDataAsync();
+  }, []);
 
   if (!loaded) {
     return null;
   }
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="settings" options={{ title: "Settings" }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <AudioProvider>
+      <ThemeProvider theme={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="settings" options={{ title: "Settings" }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </AudioProvider>
   );
 }

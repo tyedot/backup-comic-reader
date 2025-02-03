@@ -3,7 +3,7 @@ import { View, Text, Switch, Button, StyleSheet } from "react-native";
 import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Audio } from "expo-av";
+import { useAudio } from "../../context/AudioContext";
 import useComicStore from "../hooks/useComicStore";
 
 export default function Settings() {
@@ -11,8 +11,7 @@ export default function Settings() {
   const [musicVolume, setMusicVolume] = useState(1);
   const { isVertical, setIsVertical } = useComicStore();
   const router = useRouter();
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const { isPlaying, playMusic, stopMusic, setVolume } = useAudio();
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -23,34 +22,8 @@ export default function Settings() {
   }, []);
 
   useEffect(() => {
-    const playBackgroundMusic = async () => {
-      try {
-        const { sound: newSound } = await Audio.Sound.createAsync(
-          require("../../assets/audio/background.mp3"),
-          { shouldPlay: true, isLooping: true, volume: musicVolume }
-        );
-        setSound(newSound);
-        setIsPlaying(true);
-        await newSound.playAsync();
-      } catch (error) {
-        console.error("Error playing music:", error);
-      }
-    };
-
-    playBackgroundMusic();
-
-    return () => {
-      if (sound) {
-        sound.unloadAsync();
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (sound) {
-      sound.setVolumeAsync(musicVolume);
-    }
-  }, [musicVolume]);
+    setVolume(musicVolume);
+  }, [musicVolume, setVolume]);
 
   const toggleDarkMode = () => setDarkMode((prev) => !prev);
 
@@ -59,31 +32,14 @@ export default function Settings() {
   const adjustMusicVolume = async (value: number) => {
     setMusicVolume(value);
     await AsyncStorage.setItem("musicVolume", value.toString());
-
-    if (sound) {
-      await sound.setVolumeAsync(value);
-    }
+    setVolume(value);
   };
 
   const toggleMusicPlayback = async () => {
     if (isPlaying) {
-      if (sound) {
-        try {
-          await sound.stopAsync();
-          setIsPlaying(false);
-        } catch (error) {
-          console.error("Error stopping music:", error);
-        }
-      }
+      await stopMusic();
     } else {
-      if (sound) {
-        try {
-          await sound.playAsync();
-          setIsPlaying(true);
-        } catch (error) {
-          console.error("Error playing music:", error);
-        }
-      }
+      await playMusic();
     }
   };
 
