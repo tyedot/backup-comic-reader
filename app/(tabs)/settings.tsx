@@ -11,7 +11,7 @@ export default function Settings() {
   const [musicVolume, setMusicVolume] = useState(1);
   const { isVertical, setIsVertical } = useComicStore();
   const router = useRouter();
-  const { isPlaying, playMusic, stopMusic, setVolume } = useAudio();
+  const { isPlaying, playMusic, pauseMusic, setVolume } = useAudio();
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -27,7 +27,26 @@ export default function Settings() {
 
   const toggleDarkMode = () => setDarkMode((prev) => !prev);
 
-  const toggleReadingMode = () => setIsVertical(!isVertical);
+  const toggleReadingMode = async () => {
+    try {
+      // Get the current page from AsyncStorage
+      const currentPage = await AsyncStorage.getItem("currentPage");
+      if (currentPage) {
+        await AsyncStorage.setItem("lastReadPageBeforeModeChange", currentPage);
+      }
+
+      // Toggle the reading mode (explicit boolean)
+      setIsVertical(!isVertical);  // FIXED: Direct boolean instead of function
+
+      // Restore the page after the mode switches
+      const savedPage = await AsyncStorage.getItem("lastReadPageBeforeModeChange");
+      if (savedPage) {
+        await AsyncStorage.setItem("currentPage", savedPage);
+      }
+    } catch (error) {
+      console.error("Error toggling reading mode:", error);
+    }
+  };
 
   const adjustMusicVolume = async (value: number) => {
     setMusicVolume(value);
@@ -37,14 +56,14 @@ export default function Settings() {
 
   const toggleMusicPlayback = async () => {
     if (isPlaying) {
-      await stopMusic();
+      await pauseMusic();
     } else {
       await playMusic();
     }
   };
 
   return (
-    <View style={[styles.container, darkMode ? styles.dark : { backgroundColor: "#fff" }]}>
+    <View style={[styles.container, darkMode ? styles.dark : { backgroundColor: "#fff" }]}> 
       <Text style={styles.title}>Settings</Text>
 
       <View style={styles.option}>
@@ -62,7 +81,7 @@ export default function Settings() {
         <Slider minimumValue={0} maximumValue={1} step={0.1} value={musicVolume} onValueChange={adjustMusicVolume} />
       </View>
 
-      <Button title={isPlaying ? "Stop Music" : "Play Music"} onPress={toggleMusicPlayback} />
+      <Button title={isPlaying ? "Pause Music" : "Play Music"} onPress={toggleMusicPlayback} />
       <Button title="Go Back" onPress={() => router.back()} />
     </View>
   );
