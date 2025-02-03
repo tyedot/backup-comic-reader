@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Switch, Button, StyleSheet } from "react-native";
+import { View, Text, Button, StyleSheet } from "react-native";
 import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAudio } from "../../context/AudioContext";
 import useComicStore from "../hooks/useComicStore";
+import { useTheme } from "../../context/ThemeContext";
 
 export default function Settings() {
-  const [darkMode, setDarkMode] = useState(false);
   const [musicVolume, setMusicVolume] = useState(1);
   const { isVertical, setIsVertical } = useComicStore();
   const router = useRouter();
   const { isPlaying, playMusic, pauseMusic, setVolume } = useAudio();
+  const { isDark, toggleTheme, themeStyles } = useTheme();
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -25,27 +26,17 @@ export default function Settings() {
     setVolume(musicVolume);
   }, [musicVolume, setVolume]);
 
-  const toggleDarkMode = () => setDarkMode((prev) => !prev);
+  const handleToggleTheme = () => {
+    console.log("🖱️ Dark Mode Button Pressed");
+    toggleTheme();
+  };
 
   const toggleReadingMode = async () => {
-    try {
-      // Get the current page from AsyncStorage
-      const currentPage = await AsyncStorage.getItem("currentPage");
-      if (currentPage) {
-        await AsyncStorage.setItem("lastReadPageBeforeModeChange", currentPage);
-      }
-
-      // Toggle the reading mode (explicit boolean)
-      setIsVertical(!isVertical);  // FIXED: Direct boolean instead of function
-
-      // Restore the page after the mode switches
-      const savedPage = await AsyncStorage.getItem("lastReadPageBeforeModeChange");
-      if (savedPage) {
-        await AsyncStorage.setItem("currentPage", savedPage);
-      }
-    } catch (error) {
-      console.error("Error toggling reading mode:", error);
+    const currentPage = await AsyncStorage.getItem("currentPage");
+    if (currentPage) {
+      await AsyncStorage.setItem("lastReadPageBeforeModeChange", currentPage);
     }
+    setIsVertical(!isVertical);
   };
 
   const adjustMusicVolume = async (value: number) => {
@@ -63,33 +54,71 @@ export default function Settings() {
   };
 
   return (
-    <View style={[styles.container, darkMode ? styles.dark : { backgroundColor: "#fff" }]}> 
-      <Text style={styles.title}>Settings</Text>
+    <View style={[styles.container, { backgroundColor: themeStyles.backgroundColor }]}>
+      <Text style={[styles.title, { color: isDark ? "#fff" : "#000" }]}>Settings</Text>
 
       <View style={styles.option}>
-        <Text>Dark Mode</Text>
-        <Switch value={darkMode} onValueChange={toggleDarkMode} />
+        <Text style={{ color: isDark ? "#fff" : "#000" }}>Dark Mode</Text>
+        <Button
+          title={isDark ? "Enable Light Mode" : "Enable Dark Mode"}
+          onPress={handleToggleTheme}
+        />
       </View>
 
       <View style={styles.option}>
-        <Text>Reading Mode</Text>
-        <Button title={isVertical ? "Switch to Horizontal" : "Switch to Vertical"} onPress={toggleReadingMode} />
+        <Text style={{ color: isDark ? "#fff" : "#000" }}>Reading Mode</Text>
+        <Button
+          title={isVertical ? "Switch to Horizontal" : "Switch to Vertical"}
+          onPress={toggleReadingMode}
+        />
       </View>
 
       <View style={styles.option}>
-        <Text>Music Volume</Text>
-        <Slider minimumValue={0} maximumValue={1} step={0.1} value={musicVolume} onValueChange={adjustMusicVolume} />
+        <Text style={{ color: isDark ? "#fff" : "#000" }}>Music Volume</Text>
+        <Slider
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={1}
+          step={0.1}
+          value={musicVolume}
+          onValueChange={adjustMusicVolume}
+          minimumTrackTintColor="#1EB1FC"
+          maximumTrackTintColor="#8E8E93"
+          thumbTintColor="#007AFF"
+        />
       </View>
 
       <Button title={isPlaying ? "Pause Music" : "Play Music"} onPress={toggleMusicPlayback} />
       <Button title="Go Back" onPress={() => router.back()} />
+
+      {/* ✅ Overlay with pointerEvents to allow button clicks */}
+      {isDark && (
+        <View
+          style={[styles.overlay, { opacity: themeStyles.overlayOpacity }]}
+          pointerEvents="none"  // ✅ Allows interactions to pass through
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
-  dark: { backgroundColor: "#121212" },
+  container: { flex: 1, padding: 20 },
   title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
-  option: { flexDirection: "row", justifyContent: "space-between", marginVertical: 10 },
+  option: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginVertical: 10,
+  },
+  slider: { width: 200, height: 40 },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "black",
+    pointerEvents: "none", // ✅ Ensures buttons are responsive
+  },
 });

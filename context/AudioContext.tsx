@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Audio } from 'expo-av';
+import { AppState } from 'react-native';
 
 interface AudioContextProps {
   isPlaying: boolean;
@@ -24,11 +25,11 @@ export const AudioProvider: React.FC<AudioProviderProps> = ({ children }) => {
       try {
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: false,
-          staysActiveInBackground: true,
+          staysActiveInBackground: false,  // ✅ Music will stop when app goes to background
           playsInSilentModeIOS: true,
           shouldDuckAndroid: true,
-          interruptionModeIOS: 1, // DO_NOT_MIX equivalent
-          interruptionModeAndroid: 1, // DO_NOT_MIX equivalent,
+          interruptionModeIOS: 1,
+          interruptionModeAndroid: 1,
         });
         console.log('✅ Audio mode configured');
 
@@ -51,12 +52,22 @@ export const AudioProvider: React.FC<AudioProviderProps> = ({ children }) => {
 
     configureAndLoadAudio();
 
+    // ✅ Handle app state changes to pause music when app goes to background
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
     return () => {
+      subscription.remove();
       if (sound) {
         sound.unloadAsync().catch(console.error);
       }
     };
   }, []);
+
+  const handleAppStateChange = (nextAppState: string) => {
+    if (nextAppState !== 'active' && isPlaying) {
+      pauseMusic();
+    }
+  };
 
   const playMusic = async () => {
     if (sound && isLoaded) {
