@@ -1,25 +1,37 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Image, StyleSheet, ScrollView, Dimensions } from "react-native";
-import { useRouter } from "expo-router";
+import { View, Image, StyleSheet, ScrollView, Dimensions, Button, Text } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const screenWidth = Dimensions.get("window").width;
 const screenHeight = Dimensions.get("window").height;
 
+// Define comic pages here (if you're not importing them dynamically from a file)
 const comicPages = [
+  require("../assets/comics/page0.jpg"),
   require("../assets/comics/page1.jpg"),
   require("../assets/comics/page2.jpg"),
   require("../assets/comics/page3.jpg"),
+  require("../assets/comics/fight.jpg"),
+  require("../assets/comics/run.jpg"),
+  require("../assets/comics/scare.jpg"),
+  require("../assets/comics/fight1.jpg"),
+  require("../assets/comics/fight2.jpg"),
+  require("../assets/comics/fight3.jpg"),
+  require("../assets/comics/ClimbTree.jpg"),
+  require("../assets/comics/HideinTreeHollow.jpg"),
+  require("../assets/comics/killwolf.jpg"),
+  require("../assets/comics/sparewolf.jpg"),
+  require("../assets/comics/Gameover.jpg"),
+  require("../assets/comics/strangetracks.jpg"),
   // Add more pages...
 ];
 
 export default function ComicReader() {
-  const router = useRouter();
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isVertical, setIsVertical] = useState<boolean>(true); // Track reading mode
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // Load last read page & orientation
+  // Load saved page progress when app starts
   useEffect(() => {
     const loadSettings = async () => {
       const savedPage = await AsyncStorage.getItem("lastReadPage");
@@ -68,6 +80,21 @@ export default function ComicReader() {
     setCurrentPage(page);
   };
 
+  const renderPage = () => {
+    const currentPageData = comicPages[currentPage - 1]; // Access the page by its ID
+    if (!currentPageData) {
+      console.error("Page not found:", currentPage); // Log the current page ID for debugging
+      return <Text>No content found for this page</Text>;
+    }
+
+    return (
+      <Image
+        source={currentPageData}
+        style={{ width: screenWidth, height: screenHeight, resizeMode: "contain" }}
+      />
+    );
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -77,18 +104,14 @@ export default function ComicReader() {
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
-        {comicPages.map((page, index) => (
-          <Image
-            key={index}
-            source={page}
-            style={{
-              width: screenWidth,
-              height: screenHeight,
-              resizeMode: "contain",
-            }}
-          />
-        ))}
+        <View style={styles.page}>{renderPage()}</View>
       </ScrollView>
+
+      {/* Optional button to toggle reading mode */}
+      <View style={styles.buttons}>
+        <Button title="Toggle Reading Mode" onPress={toggleReadingMode} />
+        <Button title="Reset to First Page" onPress={resetToFirstPage} />
+      </View>
     </View>
   );
 }
@@ -97,4 +120,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  page: {
+    width: screenWidth,
+    height: screenHeight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'black',
+    pointerEvents: 'none',
+  },
+  buttons: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    zIndex: 1,
+  }
 });

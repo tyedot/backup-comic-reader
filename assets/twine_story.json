@@ -1,0 +1,330 @@
+{
+    "What should I do here?": {
+        "pid": "1",
+        "text": "You wake up in a dark forest...",
+        "images": ["page1.jpg"],
+        "next": "What should I do here?"
+    },
+    "What should I do here? (Part 2)": {
+        "pid": "2",
+        "text": "test",
+        "images": ["page2.jpg"],
+        "next": "What should I do here?Pt2"
+    },
+    "What should I do here? (Part 3)": {
+        "pid": "3",
+        "text": "test",
+        "images": ["page3.jpg"],
+        "choices": [
+            { "text": "Stand & Fight", "next": "Stand & Fight" },
+            { "text": "Escape!", "next": "Escape!" },
+            { "text": "Scare them off", "next": "Scare them off" }
+        ]
+    },
+    "Stand & Fight": {
+        "pid": "4",
+        "images": ["page4.jpg"],
+        "effects": {"Morale": 2},
+        "next": "Fight Outcome"
+    },
+    "Escape!": {
+        "pid": "5",
+        "images": ["page5.jpg"],
+        "effects": {"Morale": -2},
+        "next": "Escape Outcome"
+    },
+    "Scare them off": {
+        "pid": "6",
+        "images": ["page6.jpg"],
+        "effects": {"Morale": -2},
+        "next": "Scare Outcome"
+    },
+    "Fight Outcome": {
+        "pid": "7",
+        "images": ["page7.jpg"],
+        "choices": [
+            { "text": "Kill the wolf", "next": "Kill the wolf" },
+            { "text": "Spare the wolf", "next": "Spare the wolf" }
+        ]
+    },
+    "Kill the wolf": {
+        "pid": "8",
+        "images": ["page8.jpg"],
+        "effects": {"Morale": 1}
+    },
+    "Spare the wolf": {
+        "pid": "9",
+        "images": ["page9.jpg"],
+        "effects": {"Morale": 1}
+    },
+    "Escape Outcome": {
+        "pid": "10",
+        "images": ["page10.jpg"],
+        "choices": [
+            { "text": "Climb Tree", "next": "Climb Tree" },
+            { "text": "Hide in Tree Hollow", "next": "Hide in Tree Hollow" }
+        ]
+    },
+    "Climb Tree": {
+        "pid": "11",
+        "images": ["page11.jpg"],
+        "effects": {"Morale": -1}
+    },
+    "Hide in Tree Hollow": {
+        "pid": "12",
+        "images": ["page12.jpg"],
+        "effects": {"Morale": -2}
+    },
+    "Scare Outcome": {
+        "pid": "13",
+        "images": ["page13.jpg"],
+        "next": "Strange Tracks"
+    },
+    "Strange Tracks": {
+        "pid": "14",
+        "images": ["page14.jpg"],
+        "choices": [
+            { "text": "They have no use for these anymore...", "next": "They have no use for these anymore..." },
+            { "text": "This isn’t what it looks like.", "next": "This isn’t what it looks like." },
+            { "text": "Figuring out what happened here.", "next": "Figuring out what happened here." }
+        ]
+    },
+    "They have no use for these anymore...": {
+        "pid": "15",
+        "images": ["page15.jpg"],
+        "effects": {"kerukaBond": -1, "Morale": "$Morale - 3"}
+    },
+    "This isn’t what it looks like.": {
+        "pid": "16",
+        "images": ["page16.jpg"],
+        "effects": {"Morale": -1}
+    },
+    "Figuring out what happened here.": {
+        "pid": "17",
+        "images": ["page17.jpg"],
+        "effects": {"kerukaBond": 1, "Morale": "$Morale + 1"}
+    },
+    "Keruka’s Offer": {
+        "pid": "18",
+        "images": ["page18.jpg"],
+        "choices": [
+            { "text": "Refuse", "next": "Refuse" },
+            { "text": "Accept", "next": "Accept" }
+        ]
+    },
+    "Refuse": {
+        "pid": "19",
+        "images": ["page19.jpg"],
+        "effects": {"kerukaBond": -1}
+    },
+
+    "Accept": {
+        "pid": "20",
+        "images": ["page20.jpg"],
+        "effects": {"kerukaBond": 2},
+        "next": "Fight against the Nunda"
+    },
+    "Fight against the Nunda": {
+        "pid": "21",
+        "images": ["page21.jpg"],
+        "effects": {"Morale": -2},
+        "next": "Fight against the Nunda (Part 2)"
+    },
+    "Fight against the Nunda (Part 2)": {
+        "pid": "22",
+        "images": ["page22.jpg"],
+        "choices": [
+            { "text": "Climb a Tree", "next": "Climb a Tree" },
+            { "text": "You’re on Your Own", "next": "You’re on Your Own" }
+        ]
+    },
+    "Climb a Tree": {
+        "pid": "23",
+        "images": ["page23.jpg"],
+        "effects": {"kerukaBond": 1, "Morale": 1}
+    },
+    "You’re on Your Own": {
+        "pid": "24",
+        "images": ["page24.jpg"],
+        "effects": {"kerukaBond": -2, "Morale": -3}
+    },
+    "Run as Far as Possible": {
+        "pid": "25",
+        "images": ["page25.jpg"],
+        "next": "Aftermath of Facing the Two Nundas (Kehinde’s Accusation)"
+    },
+    "Aftermath of Facing the Two Nundas (Kehinde’s Accusation)": {
+        "pid": "26",
+        "images": ["page26.jpg"],
+        "effects": {"Morale": 1},
+        "choices": [
+            { "text": "Not My Responsibility", "next": "Not My Responsibility" },
+            { "text": "She’s Not Dead", "next": "She’s Not Dead" },
+            { "text": "This Is What She Wanted", "next": "This Is What She Wanted" }
+        ]
+    },
+    "Not My Responsibility": {
+        "pid": "27",
+        "images": ["page27.jpg"],
+        "effects": {"kehindeBond": -2}
+    },
+    "She’s Not Dead": {
+        "pid": "28",
+        "images": ["page28.jpg"],
+        "effects": {"kehindeBond": -2}
+    },
+    "This Is What She Wanted": {
+        "pid": "29",
+        "images": ["page29.jpg"],
+        "effects": {"Morale": 1}
+    },
+    "Surrounded": {
+        "pid": "30",
+        "images": ["page30.jpg"],
+        "next": "Helping the Survivors"
+    },
+    "Helping the Survivors": {
+        "pid": "31",
+        "images": ["page31.jpg"],
+        "effects": {"kehindeBond": 1}
+    },
+    "Just Passing Through": {
+        "pid": "32",
+        "images": ["page32.jpg"],
+        "next": "I’m here for the beast"
+    },
+    "I’m here for the beast": {
+        "pid": "33",
+        "images": ["page33.jpg"],
+        "effects": {"kehindeBond": -1, "Morale": 1}
+    },
+    "Last Words Before Execution": {
+        "pid": "34",
+        "images": ["page34.jpg"],
+        "effects": {"Morale": -2}
+    },
+    "Release me.": {
+        "pid": "35",
+        "images": ["page35.jpg"],
+        "effects": {"Morale": -1}
+    },
+    "You better make sure I’m dead.": {
+        "pid": "36",
+        "images": ["page36.jpg"],
+        "effects": {"Morale": 2}
+    },
+    "I don’t need any.": {
+        "pid": "37",
+        "images": ["page37.jpg"],
+        "next": "Kehinde is a coward."
+    },
+    "Kehinde is a coward.": {
+        "pid": "38",
+        "images": ["page38.jpg"],
+        "effects": {"kerukaBond": -1, "kehindeBond": -2}
+    },
+    "Response to Kehinde’s offer:": {
+        "pid": "39",
+        "images": ["page39.jpg"],
+        "choices": [
+            { "text": "Fine, I Accept.", "next": "Fine, I Accept." },
+            { "text": "I Don’t Trust Your Help.", "next": "I Don’t Trust Your Help." }
+        ]
+    },
+    "Fine, I Accept.": {
+        "pid": "40",
+        "images": ["page40.jpg"],
+        "effects": {"kehindeBond": 2, "acceptedKehindeHelp": "true", "Morale": -2}
+    },
+    "I Don’t Trust Your Help.": {
+        "pid": "41",
+        "images": ["page41.jpg"],
+        "effects": {"kehindeBond": -2, "acceptedKehindeHelp": "false"}
+    },
+    "Response to Keruka’s Help": {
+        "pid": "42",
+        "images": ["page42.jpg"],
+        "choices": [
+            { "text": "I Don’t Trust You", "next": "I Don’t Trust You" },
+            { "text": "Get me out of here.", "next": "Get me out of here." }
+        ]
+    },
+    "I Don’t Trust You": {
+        "pid": "43",
+        "images": ["page43.jpg"],
+        "effects": {"kerukaBond": -2}
+    },
+    "Get me out of here.": {
+        "pid": "44",
+        "images": ["page44.jpg"],
+        "effects": {"Morale": 2}
+    },
+    "Refuse Again": {
+        "pid": "45",
+        "images": ["page45.jpg"],
+        "effects": {"kerukaBond": -3, "Morale": -3}
+    },
+    "Reluctantly Agree.": {
+        "pid": "46",
+        "images": ["page46.jpg"],
+        "effects": {"kerukaBond": 1}
+    },
+    "Game Over": {
+        "pid": "47",
+        "images": ["page47.jpg"],
+        "text": "You Have Died"
+    },
+    "Escape - Reveal Secret to Keruka?": {
+        "pid": "48",
+        "images": ["page48.jpg"],
+        "choices": [
+            { "text": "Tell Keruka Nothing", "next": "Tell Keruka Nothing" },
+            { "text": "Tell Keruka Kehinde’s Secret", "next": "Tell Keruka Kehinde’s Secret" }
+        ]
+    },
+    "Tell Keruka Nothing": {
+        "pid": "49",
+        "images": ["page49.jpg"],
+        "effects": {"kerukaBond": -2, "sharedSecret": "false"}
+    },
+    "Tell Keruka Kehinde’s Secret": {
+        "pid": "50",
+        "images": ["page50.jpg"],
+        "effects": {"kerukaBond": 2, "sharedSecret": "true", "Morale": 1}
+    },
+    "Neutral Ending I": {
+        "pid": "51",
+        "images": ["page51.jpg"],
+        "effects": {"Morale": 1}
+    },
+    "Neutral Ending II": {
+        "pid": "52",
+        "images": ["page52.jpg"],
+        "effects": {"Morale": 2}
+    },
+    "Bad Ending I": {
+        "pid": "53",
+        "images": ["page53.jpg"],
+        "effects": {"Morale": -8}
+    },
+    "Bad Ending IV": {
+        "pid": "54",
+        "images": ["page54.jpg"]
+    },
+    "Special Ending I": {
+        "pid": "55",
+        "images": ["page55.jpg"]
+    },
+    "Special Ending II": {
+        "pid": "56",
+        "images": ["page56.jpg"]
+    },
+    "Bad Ending II": {
+        "pid": "57",
+        "images": ["page57.jpg"]
+    },
+    "Bad Ending III": {
+        "pid": "58",
+        "images": ["page58.jpg"]
+    }
+}
