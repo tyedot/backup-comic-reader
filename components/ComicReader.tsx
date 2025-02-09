@@ -2,71 +2,98 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, View, Dimensions, Image, StyleSheet, Button, Text } from 'react-native';
 import { comicPages } from '../app/hooks/storyData'; // Ensure this path is correct
 import useComicStore from '../app/hooks/useComicStore'; // Zustand store
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAudio } from '../context/AudioContext';
 import { useTheme } from '../context/ThemeContext';
 
-const screenWidth = Dimensions.get('window').width;
-const screenHeight = Dimensions.get('window').height;
+const screenWidth: number = Dimensions.get('window').width;
+const screenHeight: number = Dimensions.get('window').height;
 
 export default function ComicReader() {
-  const { isVertical, currentPage, setCurrentPage, morale, setMorale, kerukaBond, setKerukaBond, kehindeBond, setKehindeBond } = useComicStore();
+  const {
+    isVertical,
+    currentPage,
+    setCurrentPage,
+    morale,
+    setMorale,
+    kerukaBond,
+    setKerukaBond,
+    kehindeBond,
+    setKehindeBond,
+    loadSavedState,
+  } = useComicStore();
+
   const scrollViewRef = useRef<ScrollView>(null);
   const { playMusic } = useAudio();
   const { isDark, themeStyles } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
 
-  // Log comicPages when the component is mounted
   useEffect(() => {
-    console.log('comicPages:', comicPages);  // Log the comicPages to check if it's being loaded correctly
+    console.log('comicPages:', comicPages);
   }, []);
 
-  // Load saved page progress when app starts
   useEffect(() => {
-    const loadProgressAndPlayMusic = async () => {
-      try {
-        const savedPage = await AsyncStorage.getItem('currentPage');
-        const pageToLoad = savedPage ? parseInt(savedPage, 10) : 1;  // Default to page 1, not 0
-        console.log('Loading page:', pageToLoad); // Log the page being loaded
-        setCurrentPage(pageToLoad);
-        if (scrollViewRef.current) {
-          scrollToPage(pageToLoad, false);
-        }
-        await playMusic();
-      } catch (error) {
-        console.error('Error loading saved page:', error);
-      } finally {
-        setIsLoading(false);
+    const initialize = async () => {
+      await loadSavedState();
+      if (scrollViewRef.current) {
+        scrollToPage(currentPage, false);
       }
+      await playMusic();
+      setIsLoading(false);
     };
-    loadProgressAndPlayMusic();
+    initialize();
   }, []);
+
+  useEffect(() => {
+    if (scrollViewRef.current) {
+      scrollToPage(currentPage, true);
+    }
+  }, [currentPage]);
 
   if (isLoading) {
-    return <Text>Loading...</Text>;  // Show loading message until data is ready
+    return <Text>Loading...</Text>;
   }
 
   const scrollToPage = (page: number, animated: boolean = true) => {
-    console.log('scrollToPage function called');
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollTo({
-        x: isVertical ? 0 : page * screenWidth,
-        y: isVertical ? page * screenHeight : 0,
+    if (!scrollViewRef.current || page < 1 || page > comicPages.length) return;
+  
+    // ✅ Prevent re-scrolling if already on the correct page
+    if (page === currentPage) {
+      console.log('Skipping redundant scroll to page:', page);
+      return;
+    }
+  
+    console.log('scrollToPage function called for page:', page);
+    const offset = isVertical ? screenHeight * (page - 1) : screenWidth * (page - 1);
+  
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({
+        x: isVertical ? 0 : offset,
+        y: isVertical ? offset : 0,
         animated,
       });
-    }
+    }, 100);
   };
+  
+  
+  
 
   const handlePageChange = (event: any) => {
     const offset = isVertical
       ? event.nativeEvent.contentOffset.y
       : event.nativeEvent.contentOffset.x;
-
-    const newPage = Math.floor(offset / (isVertical ? screenHeight : screenWidth));
-    console.log('Page changed to:', newPage);  // Log the new page after the scroll
-    setCurrentPage(newPage);
-    AsyncStorage.setItem('currentPage', newPage.toString());
+  
+    const pageSize = isVertical ? screenHeight : screenWidth;
+    const threshold = pageSize * 0.3; // ✅ Ensures small swipes register page changes
+  
+    const newPage = Math.round(offset / pageSize) + 1;
+  
+    // ✅ Ensure the new page is different before updating state
+    if (newPage !== currentPage && Math.abs(offset - (currentPage - 1) * pageSize) > threshold) {
+      console.log('Page changed to:', newPage);
+      setCurrentPage(newPage);
+    }
   };
+  
 
   const handleChoice = (
     nextPage: number,
@@ -74,46 +101,59 @@ export default function ComicReader() {
     kerukaBondEffect: number = 0,
     kehindeBondEffect: number = 0
   ) => {
-    console.log('Handling choice:', nextPage);  // Log the next page and effect
-    console.log('Keruka Bond:', kerukaBond, 'Kehinde Bond:', kehindeBond);  // Log current bond values
+    console.log('Handling choice:', nextPage);
+    
     setMorale(morale + effect.morale);
     setKerukaBond(kerukaBond + kerukaBondEffect);
     setKehindeBond(kehindeBond + kehindeBondEffect);
-    setCurrentPage(nextPage);
-    AsyncStorage.setItem('currentPage', nextPage.toString());
+
+    const selectedPage = comicPages.find((page) => page.id === nextPage);
+
+    if (selectedPage?.branch && selectedPage.branch.length > 0) {
+      console.log('Branching to:', selectedPage.branch);
+      
+      selectedPage.branch.forEach((branchPage: number, index: number) => {
+        setTimeout(() => setCurrentPage(branchPage), index * 1000);
+      });
+
+      // ✅ Ensure `postBranchPage` is always a number (fallback: last branch page or `nextPage`)
+      const postBranchPage = selectedPage.postBranch 
+        ?? (selectedPage.branch.length > 0 ? selectedPage.branch[selectedPage.branch.length - 1] : nextPage);
+      
+      setTimeout(() => setCurrentPage(postBranchPage), selectedPage.branch.length * 1000 + 2000);
+    } else {
+      setCurrentPage(nextPage);
+    }
   };
 
-  const renderPage = () => {
-    console.log('Rendering page:', currentPage); // Log the current page being rendered
-    const currentPageData = comicPages.find((page) => page.id === currentPage);
+  const renderPage = (pageId: number) => {
+    console.log('Rendering page:', pageId);
+    const currentPageData = comicPages.find((page) => page.id === pageId);
 
     if (!currentPageData) {
-      console.error("Page not found:", currentPage);
+      console.error("Page not found:", pageId);
       return <Text>No content found for this page</Text>;
     }
 
     if (currentPageData?.type === 'image') {
-      console.log('Rendering image page:', currentPageData.id); // Log rendering of an image page
-      return <Image source={currentPageData.content} style={{ width: screenWidth, height: screenHeight, resizeMode: 'contain' }} />;
+      return <Image source={currentPageData.content} style={styles.image} />;
     }
 
     if (currentPageData?.type === 'choice') {
-      console.log('Rendering choice page:', currentPageData.id); // Log rendering of a choice page
       return (
         <View style={styles.choiceContainer}>
-          <Image source={currentPageData.content} style={{ width: screenWidth, height: screenHeight, resizeMode: 'contain' }} />
+          <Image source={currentPageData.content} style={styles.image} />
           {currentPageData.choices?.map((choice, index) => (
             <Button
               key={index}
               title={choice.label}
-              onPress={() => handleChoice(choice.nextPage, choice.effect, choice.kerukaBondEffect, choice.kehindeBondEffect)}
+              onPress={() => handleChoice(choice.nextPage, choice.effect)}
             />
           ))}
         </View>
       );
     }
 
-    // If the page type is invalid, return a fallback message
     return <Text>Invalid page type</Text>;
   };
 
@@ -124,9 +164,18 @@ export default function ComicReader() {
         pagingEnabled
         horizontal={!isVertical}
         scrollEventThrottle={16}
-        onMomentumScrollEnd={handlePageChange}
+        onScrollEndDrag={handlePageChange}
+        decelerationRate="normal" // ✅ Faster and smoother scrolling
+        snapToInterval={isVertical ? screenHeight : screenWidth} // ✅ Ensures proper page snapping
+        snapToAlignment="center" // ✅ Centers the page correctly
+        keyboardShouldPersistTaps="handled" // ✅ Fixes unresponsive button taps
+        //removeClippedSubviews={true} // ✅ Improves performance by unloading off-screen pages
       >
-        <View style={styles.page}>{renderPage()}</View>
+        {comicPages.map((page) => (
+          <View key={page.id} style={styles.page}>
+            {renderPage(page.id)}
+          </View>
+        ))}
       </ScrollView>
 
       {isDark && (
@@ -145,6 +194,11 @@ const styles = StyleSheet.create({
     height: screenHeight,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  image: {
+    width: screenWidth,
+    height: screenHeight,
+    resizeMode: 'contain',
   },
   overlay: {
     position: 'absolute',
