@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ScrollView, View, Dimensions, Image, StyleSheet, Button, Text } from 'react-native';
-import { comicPages } from '../app/hooks/storyData'; // Ensure this path is correct
-import useComicStore from '../app/hooks/useComicStore'; // Zustand store
+import { ScrollView, View, Dimensions, Image, StyleSheet, Text } from 'react-native';
+import { comicPages } from '../app/hooks/storyData';
+import useComicStore from '../app/hooks/useComicStore';
 import { useAudio } from '../context/AudioContext';
 import { useTheme } from '../context/ThemeContext';
+import ChoiceButtons from '../components/ChoiceButtons'; // Import the choice button component
 
 const screenWidth: number = Dimensions.get('window').width;
 const screenHeight: number = Dimensions.get('window').height;
@@ -26,10 +27,6 @@ export default function ComicReader() {
   const { playMusic } = useAudio();
   const { isDark, themeStyles } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    console.log('comicPages:', comicPages);
-  }, []);
 
   useEffect(() => {
     const initialize = async () => {
@@ -56,13 +53,12 @@ export default function ComicReader() {
   const scrollToPage = (page: number, animated: boolean = true) => {
     if (!scrollViewRef.current || page < 1 || page > comicPages.length) return;
   
-    // ✅ Prevent re-scrolling if already on the correct page
     if (page === currentPage) {
       console.log('Skipping redundant scroll to page:', page);
       return;
     }
   
-    console.log('scrollToPage function called for page:', page);
+    console.log('Scrolling to page:', page);
     const offset = isVertical ? screenHeight * (page - 1) : screenWidth * (page - 1);
   
     setTimeout(() => {
@@ -73,27 +69,6 @@ export default function ComicReader() {
       });
     }, 100);
   };
-  
-  
-  
-
-  const handlePageChange = (event: any) => {
-    const offset = isVertical
-      ? event.nativeEvent.contentOffset.y
-      : event.nativeEvent.contentOffset.x;
-  
-    const pageSize = isVertical ? screenHeight : screenWidth;
-    const threshold = pageSize * 0.3; // ✅ Ensures small swipes register page changes
-  
-    const newPage = Math.round(offset / pageSize) + 1;
-  
-    // ✅ Ensure the new page is different before updating state
-    if (newPage !== currentPage && Math.abs(offset - (currentPage - 1) * pageSize) > threshold) {
-      console.log('Page changed to:', newPage);
-      setCurrentPage(newPage);
-    }
-  };
-  
 
   const handleChoice = (
     nextPage: number,
@@ -101,29 +76,15 @@ export default function ComicReader() {
     kerukaBondEffect: number = 0,
     kehindeBondEffect: number = 0
   ) => {
-    console.log('Handling choice:', nextPage);
-    
+    console.log(`Choice selected: Going to page ${nextPage}`);
+    console.log('Morale change:', effect.morale);
+    console.log('Keruka Bond effect:', kerukaBondEffect);
+    console.log('Kehinde Bond effect:', kehindeBondEffect);
+
     setMorale(morale + effect.morale);
     setKerukaBond(kerukaBond + kerukaBondEffect);
     setKehindeBond(kehindeBond + kehindeBondEffect);
-
-    const selectedPage = comicPages.find((page) => page.id === nextPage);
-
-    if (selectedPage?.branch && selectedPage.branch.length > 0) {
-      console.log('Branching to:', selectedPage.branch);
-      
-      selectedPage.branch.forEach((branchPage: number, index: number) => {
-        setTimeout(() => setCurrentPage(branchPage), index * 1000);
-      });
-
-      // ✅ Ensure `postBranchPage` is always a number (fallback: last branch page or `nextPage`)
-      const postBranchPage = selectedPage.postBranch 
-        ?? (selectedPage.branch.length > 0 ? selectedPage.branch[selectedPage.branch.length - 1] : nextPage);
-      
-      setTimeout(() => setCurrentPage(postBranchPage), selectedPage.branch.length * 1000 + 2000);
-    } else {
-      setCurrentPage(nextPage);
-    }
+    setCurrentPage(nextPage);
   };
 
   const renderPage = (pageId: number) => {
@@ -140,16 +101,18 @@ export default function ComicReader() {
     }
 
     if (currentPageData?.type === 'choice') {
+      console.log('Choice page detected:', currentPageData);
+      console.log('Choices:', currentPageData.choices);
+
+      if (!currentPageData.choices || currentPageData.choices.length === 0) {
+        console.warn('No choices available for this page:', currentPageData.id);
+        return <Text>No choices available</Text>;
+      }
+
       return (
         <View style={styles.choiceContainer}>
           <Image source={currentPageData.content} style={styles.image} />
-          {currentPageData.choices?.map((choice, index) => (
-            <Button
-              key={index}
-              title={choice.label}
-              onPress={() => handleChoice(choice.nextPage, choice.effect)}
-            />
-          ))}
+          <ChoiceButtons choices={currentPageData.choices ?? []} handleChoice={handleChoice} />
         </View>
       );
     }
@@ -164,12 +127,11 @@ export default function ComicReader() {
         pagingEnabled
         horizontal={!isVertical}
         scrollEventThrottle={16}
-        onScrollEndDrag={handlePageChange}
-        decelerationRate="normal" // ✅ Faster and smoother scrolling
-        snapToInterval={isVertical ? screenHeight : screenWidth} // ✅ Ensures proper page snapping
-        snapToAlignment="center" // ✅ Centers the page correctly
-        keyboardShouldPersistTaps="handled" // ✅ Fixes unresponsive button taps
-        //removeClippedSubviews={true} // ✅ Improves performance by unloading off-screen pages
+        decelerationRate="fast"
+        snapToInterval={isVertical ? screenHeight : screenWidth}
+        snapToAlignment="center"
+        keyboardShouldPersistTaps="handled" // ✅ Ensures buttons are clickable
+        removeClippedSubviews={true}
       >
         {comicPages.map((page) => (
           <View key={page.id} style={styles.page}>
