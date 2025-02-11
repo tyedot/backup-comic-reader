@@ -16,43 +16,91 @@ interface ComicStore {
   setKerukaBond: (kerukaBond: number) => void;
   setKehindeBond: (kehindeBond: number) => void;
   loadSavedState: () => Promise<void>;
+  resetGame: () => void;
 }
 
-const useComicStore = create<ComicStore>((set) => ({
-  currentPage: 1,
+const useComicStore = create<ComicStore>((set, get) => ({
+  currentPage: 0,
   lastReadPage: 1,
   isVertical: true,
   morale: 50,
   kerukaBond: 50,
   kehindeBond: 50,
 
-  // Persist current page in AsyncStorage
+  // ✅ Persist current page in AsyncStorage and Zustand state
   setCurrentPage: async (page: number) => {
     try {
+      console.log(`🛠️ Attempting to update currentPage from ${get().currentPage} to ${page}`);
+      
       await AsyncStorage.setItem('currentPage', page.toString());
-      set({ currentPage: page });
+
+      set((state) => {
+        console.log(`✅ currentPage successfully updated from ${state.currentPage} to ${page}`);
+        return { currentPage: page };
+      });
+
     } catch (error) {
-      console.error('Error saving currentPage:', error);
+      console.error('❌ Error saving currentPage:', error);
     }
   },
 
-  setLastReadPage: (page: number) => set({ lastReadPage: page }),
-  setIsVertical: (isVertical: boolean) => set({ isVertical }),
-  setMorale: (morale: number) => set({ morale }),
-  setKerukaBond: (kerukaBond: number) => set({ kerukaBond }),
-  setKehindeBond: (kehindeBond: number) => set({ kehindeBond }),
+  setLastReadPage: (page: number) => {
+    console.log(`🔖 Updating lastReadPage to ${page}`);
+    set({ lastReadPage: page });
+  },
 
-  // Load saved page from AsyncStorage on app start
+  setIsVertical: (isVertical: boolean) => {
+    console.log(`🔄 Changing reading mode to ${isVertical ? "Vertical" : "Horizontal"}`);
+    set({ isVertical });
+  },
+
+  setMorale: (morale: number) => {
+    console.log(`📈 Updating morale to ${morale}`);
+    set({ morale });
+  },
+
+  setKerukaBond: (kerukaBond: number) => {
+    console.log(`💙 Updating Keruka Bond to ${kerukaBond}`);
+    set({ kerukaBond });
+  },
+
+  setKehindeBond: (kehindeBond: number) => {
+    console.log(`❤️ Updating Kehinde Bond to ${kehindeBond}`);
+    set({ kehindeBond });
+  },
+
+  // ✅ Load saved page from AsyncStorage on app start
   loadSavedState: async () => {
     try {
       const savedPage = await AsyncStorage.getItem('currentPage');
+
       if (savedPage) {
+        console.log(`📂 Loaded saved page from storage: ${savedPage}`);
         set({ currentPage: parseInt(savedPage, 10) });
+      } else {
+        console.log("🆕 No saved page found, starting at Page 0");
+        set({ currentPage: 0 }); // Ensure default is 0
       }
     } catch (error) {
-      console.error('Error loading saved page:', error);
+      console.error('❌ Error loading saved page:', error);
     }
   },
+
+  // ✅ Reset the game state
+  resetGame: async () => {
+    console.log("🔄 Resetting game progress...");
+
+    await AsyncStorage.removeItem('currentPage'); // Clear saved page
+    set({
+      currentPage: 0,
+      lastReadPage: 1,
+      morale: 50,
+      kerukaBond: 50,
+      kehindeBond: 50,
+    });
+
+    console.log("🆕 Game reset complete! Back to Page 0.");
+  }
 }));
 
 export default useComicStore;

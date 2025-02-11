@@ -97,6 +97,13 @@ export default function Settings() {
 
       <Button title={isPlaying ? "Pause Music" : "Play Music"} onPress={toggleMusicPlayback} />
       <Button title="Go Back" onPress={() => router.back()} />
+      <Button
+  title="Reset Saved Data"
+  onPress={async () => {
+    await AsyncStorage.removeItem('currentPage');
+    console.log("🗑️ Saved page data cleared!");
+  }}
+/>
 
       {isDark && (
         <View
