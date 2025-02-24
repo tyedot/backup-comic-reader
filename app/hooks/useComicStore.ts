@@ -20,8 +20,9 @@ interface ComicStore {
 }
 
 const useComicStore = create<ComicStore>((set, get) => ({
+  // Use zero-based indexing throughout
   currentPage: 0,
-  lastReadPage: 1,
+  lastReadPage: 0, // Changed from 1 to 0 for consistency
   isVertical: true,
   morale: 50,
   kerukaBond: 50,
@@ -79,7 +80,7 @@ const useComicStore = create<ComicStore>((set, get) => ({
         set({ currentPage: parseInt(savedPage, 10) });
       } else {
         console.log("🆕 No saved page found, starting at Page 0");
-        set({ currentPage: 0 }); // Ensure default is 0
+        set({ currentPage: 0 });
       }
     } catch (error) {
       console.error('❌ Error loading saved page:', error);
@@ -90,10 +91,10 @@ const useComicStore = create<ComicStore>((set, get) => ({
   resetGame: async () => {
     console.log("🔄 Resetting game progress...");
 
-    await AsyncStorage.removeItem('currentPage'); // Clear saved page
+    await AsyncStorage.removeItem('currentPage');
     set({
       currentPage: 0,
-      lastReadPage: 1,
+      lastReadPage: 0,
       morale: 50,
       kerukaBond: 50,
       kehindeBond: 50,
