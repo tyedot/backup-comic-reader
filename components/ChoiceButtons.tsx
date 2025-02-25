@@ -1,5 +1,5 @@
 // /components/ChoiceButtons.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 
 interface Choice {
@@ -12,6 +12,7 @@ interface Choice {
 
 interface ChoiceButtonsProps {
   choices: Choice[];
+  resetFlag?: number; // New prop to reset the selection when the game resets
   handleChoice: (
     nextPage: number,
     effect: { morale: number },
@@ -20,8 +21,13 @@ interface ChoiceButtonsProps {
   ) => void;
 }
 
-const ChoiceButtons: React.FC<ChoiceButtonsProps> = ({ choices, handleChoice }) => {
+const ChoiceButtons: React.FC<ChoiceButtonsProps> = ({ choices, handleChoice, resetFlag }) => {
   const [selected, setSelected] = useState<number | null>(null);
+
+  // Reset the local selection state when resetFlag changes.
+  useEffect(() => {
+    setSelected(null);
+  }, [resetFlag]);
 
   if (!choices || choices.length === 0) {
     console.warn('No choices available to render.');
@@ -70,7 +76,7 @@ const ChoiceButtons: React.FC<ChoiceButtonsProps> = ({ choices, handleChoice }) 
 const styles = StyleSheet.create({
   choiceContainer: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 30, // Appears above the bottom edge
     width: '90%',
     alignItems: 'center',
     backgroundColor: 'transparent',
@@ -90,10 +96,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   selectedButton: {
-    backgroundColor: 'yellow', // Selected button background
+    backgroundColor: 'yellow', // Highlighted background for the selected button
   },
   disabledButton: {
-    opacity: 0.5, // Dimmed look for unselected buttons after a choice is made
+    opacity: 0.5, // Dim unselected buttons after a choice is made
   },
   choiceText: {
     color: '#fff', // Default text color

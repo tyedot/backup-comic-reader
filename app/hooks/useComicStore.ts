@@ -9,6 +9,7 @@ interface ComicStore {
   morale: number;
   kerukaBond: number;
   kehindeBond: number;
+  resetFlag: number;
   setCurrentPage: (page: number) => void;
   setLastReadPage: (page: number) => void;
   setIsVertical: (isVertical: boolean) => void;
@@ -24,22 +25,20 @@ const useComicStore = create<ComicStore>((set, get) => ({
   currentPage: 0,
   lastReadPage: 0, // Changed from 1 to 0 for consistency
   isVertical: true,
-  morale: 50,
-  kerukaBond: 50,
-  kehindeBond: 50,
+  morale: 10,
+  kerukaBond: 0,
+  kehindeBond: 0,
+  resetFlag: 0, // New flag to trigger reset of local component state
 
   // ✅ Persist current page in AsyncStorage and Zustand state
   setCurrentPage: async (page: number) => {
     try {
       console.log(`🛠️ Attempting to update currentPage from ${get().currentPage} to ${page}`);
-      
       await AsyncStorage.setItem('currentPage', page.toString());
-
       set((state) => {
         console.log(`✅ currentPage successfully updated from ${state.currentPage} to ${page}`);
         return { currentPage: page };
       });
-
     } catch (error) {
       console.error('❌ Error saving currentPage:', error);
     }
@@ -74,7 +73,6 @@ const useComicStore = create<ComicStore>((set, get) => ({
   loadSavedState: async () => {
     try {
       const savedPage = await AsyncStorage.getItem('currentPage');
-
       if (savedPage) {
         console.log(`📂 Loaded saved page from storage: ${savedPage}`);
         set({ currentPage: parseInt(savedPage, 10) });
@@ -90,7 +88,6 @@ const useComicStore = create<ComicStore>((set, get) => ({
   // ✅ Reset the game state
   resetGame: async () => {
     console.log("🔄 Resetting game progress...");
-
     await AsyncStorage.removeItem('currentPage');
     set({
       currentPage: 0,
@@ -99,7 +96,8 @@ const useComicStore = create<ComicStore>((set, get) => ({
       kerukaBond: 50,
       kehindeBond: 50,
     });
-
+    // Increment resetFlag to signal a reset
+    set((state) => ({ resetFlag: state.resetFlag + 1 }));
     console.log("🆕 Game reset complete! Back to Page 0.");
   }
 }));

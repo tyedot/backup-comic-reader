@@ -1,3 +1,4 @@
+// /screens/Settings.tsx
 import React, { useState, useEffect } from "react";
 import { View, Text, Button, StyleSheet } from "react-native";
 import Slider from "@react-native-community/slider";
@@ -9,7 +10,7 @@ import { useTheme } from "../../context/ThemeContext";
 
 export default function Settings() {
   const [musicVolume, setMusicVolume] = useState(1);
-  const { isVertical, setIsVertical } = useComicStore();
+  const { isVertical, setIsVertical, resetGame } = useComicStore();
   const router = useRouter();
   const { isPlaying, playMusic, pauseMusic, setVolume } = useAudio();
   const { isDark, toggleTheme, themeStyles } = useTheme();
@@ -31,15 +32,12 @@ export default function Settings() {
     toggleTheme();
   };
 
-  // ✅ Add logs for Reading Mode Button
   const toggleReadingMode = async () => {
     const currentPage = await AsyncStorage.getItem("currentPage");
-
     console.log("🔄 Reading Mode Button Pressed");
     console.log(`📄 Current Page: ${currentPage || 0}`);
     console.log(`📚 Current Mode: ${isVertical ? "Vertical" : "Horizontal"}`);
     console.log(`➡️ Switching to: ${!isVertical ? "Vertical" : "Horizontal"}`);
-
     if (currentPage) {
       await AsyncStorage.setItem("lastReadPageBeforeModeChange", currentPage);
     }
@@ -58,6 +56,17 @@ export default function Settings() {
     } else {
       await playMusic();
     }
+  };
+
+  const handleResetGame = async () => {
+    // Call the resetGame function from your store.
+    await resetGame();
+    console.log("🗑️ Game has been reset!");
+    // Optionally, if you want to clear additional cached data, do so here.
+    // Since ComicReader listens for changes in the store's reset flag (or is keyed by it),
+    // it will reinitialize its local state without navigation.
+    // If your ComicReader is not keyed by resetFlag, you might call router.replace("/comic")
+    // to force a remount.
   };
 
   return (
@@ -97,13 +106,7 @@ export default function Settings() {
 
       <Button title={isPlaying ? "Pause Music" : "Play Music"} onPress={toggleMusicPlayback} />
       <Button title="Go Back" onPress={() => router.back()} />
-      <Button
-  title="Reset Saved Data"
-  onPress={async () => {
-    await AsyncStorage.removeItem('currentPage');
-    console.log("🗑️ Saved page data cleared!");
-  }}
-/>
+      <Button title="Restart Game" onPress={handleResetGame} />
 
       {isDark && (
         <View

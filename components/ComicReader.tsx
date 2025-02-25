@@ -11,12 +11,12 @@ const screenWidth: number = Dimensions.get("window").width;
 const screenHeight: number = Dimensions.get("window").height;
 
 export default function ComicReader() {
-  // Move the useRef call inside the component so it's called at the top level.
+  // Move useRef inside the component so it's called at the top level.
   const scrollViewRef = useRef<React.ElementRef<typeof Animated.ScrollView>>(null);
 
   const {
     isVertical,
-    currentPage, // current page id
+    currentPage,
     setCurrentPage,
     morale,
     setMorale,
@@ -25,6 +25,7 @@ export default function ComicReader() {
     kehindeBond,
     setKehindeBond,
     loadSavedState,
+    resetFlag, // new flag from the store
   } = useComicStore();
 
   const { playMusic } = useAudio();
@@ -32,13 +33,20 @@ export default function ComicReader() {
   const [isLoading, setIsLoading] = useState(true);
   const [isChoiceMade, setIsChoiceMade] = useState(false);
 
-  // States for branch navigation (if needed)
   const [activeBranch, setActiveBranch] = useState<number[] | null>(null);
   const [activePostBranch, setActivePostBranch] = useState<number | null>(null);
 
-  // Keep track of which pages have been revealed.
+  // Local state for revealed pages.
   // Initially, only pages 0, 1, 2, and 3 are revealed.
   const [revealedPages, setRevealedPages] = useState<number[]>([0, 1, 2, 3]);
+
+  // Whenever resetFlag changes, reset ComicReader’s local state.
+  useEffect(() => {
+    setRevealedPages([0, 1, 2, 3]);
+    setIsChoiceMade(false);
+    setCurrentPage(0);
+    scrollToPage(0, false);
+  }, [resetFlag]);
 
   // Only render pages that have been revealed.
   const pagesToRender: ComicPage[] = comicPages.filter((page) =>
@@ -96,7 +104,6 @@ export default function ComicReader() {
     console.log("🛠️ Scrolling to page id:", pageId, "at index:", targetIndex);
     const offset = isVertical ? screenHeight * targetIndex : screenWidth * targetIndex;
     requestAnimationFrame(() => {
-      // Cast to any so TypeScript recognizes scrollTo.
       (scrollViewRef.current as any).scrollTo({
         x: isVertical ? 0 : offset,
         y: isVertical ? offset : 0,
@@ -156,7 +163,6 @@ export default function ComicReader() {
     const index = Math.round(offset / dimension);
     if (index >= 0 && index < pagesToRender.length) {
       const newPageId = pagesToRender[index].id;
-      // Only update if the new page differs from currentPage.
       if (newPageId !== currentPage) {
         setCurrentPage(newPageId);
         console.log(`Updated currentPage to id: ${newPageId} (index ${index})`);
@@ -174,6 +180,7 @@ export default function ComicReader() {
           <Image source={page.content} style={styles.image} />
           <ChoiceButtons
             choices={page.choices || []}
+            resetFlag={resetFlag} // Pass the resetFlag to clear ChoiceButtons local state on reset.
             handleChoice={(
               nextPage: number,
               effect: { morale: number },
