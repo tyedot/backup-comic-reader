@@ -18,11 +18,11 @@ const gameover = Image.resolveAssetSource(require("../../assets/comics/Gameover.
 const strangeTracks = Image.resolveAssetSource(require("../../assets/comics/strangetracks.jpg"));
 
 console.log("🖼️ Debugging require():", page0, "Type:", typeof page0);
-console.log("🖼️ Debugging require():", page1, "Type:", typeof page0);
-console.log("🖼️ Debugging require():", page2, "Type:", typeof page0);
-console.log("🖼️ Debugging require():", page3, "Type:", typeof page0);
+console.log("🖼️ Debugging require():", page1, "Type:", typeof page1);
+console.log("🖼️ Debugging require():", page2, "Type:", typeof page2);
+console.log("🖼️ Debugging require():", page3, "Type:", typeof page3);
 
-interface Choice {
+export interface Choice {
     label: string;
     nextPage: number;
     effect: { morale: number };
@@ -32,7 +32,7 @@ interface Choice {
     postBranch?: number;
 }
 
-interface ComicPage {
+export interface ComicPage {
     id: number;
     type: 'image' | 'choice';
     content: any;
@@ -53,7 +53,7 @@ export const comicPages: ComicPage[] = [
         choices: [
             { label: "Fight", nextPage: 4, effect: { morale: 3 }, branch: [4, 7, 8, 9], postBranch: 10 },
             { label: "Run", nextPage: 5, effect: { morale: -3 }, branch: [5], postBranch: 10 },
-            { label: "Scare wolves away", nextPage: 6, effect: { morale: -2 }, branch: [6], postBranch: 4 },
+            { label: "Scare wolves away", nextPage: 6, effect: { morale: -2 }, branch: [6], postBranch: 3 },
         ],
     },
 

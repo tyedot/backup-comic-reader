@@ -1,19 +1,22 @@
 // /components/ComicReader.tsx
-import React, { useEffect, useRef, useState } from 'react';
-import { ScrollView, View, Dimensions, Image, StyleSheet, Text } from 'react-native';
-import comicPages from '../app/hooks/storyData';
-import useComicStore from '../app/hooks/useComicStore';
-import { useAudio } from '../context/AudioContext';
-import { useTheme } from '../context/ThemeContext';
-import ChoiceButtons from '../components/ChoiceButtons';
+import React, { useEffect, useRef, useState } from "react";
+import { Animated, View, Dimensions, Image, StyleSheet, Text } from "react-native";
+import comicPages, { ComicPage } from "../app/hooks/storyData";
+import useComicStore from "../app/hooks/useComicStore";
+import { useAudio } from "../context/AudioContext";
+import { useTheme } from "../context/ThemeContext";
+import ChoiceButtons from "../components/ChoiceButtons";
 
-const screenWidth: number = Dimensions.get('window').width;
-const screenHeight: number = Dimensions.get('window').height;
+const screenWidth: number = Dimensions.get("window").width;
+const screenHeight: number = Dimensions.get("window").height;
 
 export default function ComicReader() {
+  // Move the useRef call inside the component so it's called at the top level.
+  const scrollViewRef = useRef<React.ElementRef<typeof Animated.ScrollView>>(null);
+
   const {
     isVertical,
-    currentPage,
+    currentPage, // current page id
     setCurrentPage,
     morale,
     setMorale,
@@ -24,143 +27,173 @@ export default function ComicReader() {
     loadSavedState,
   } = useComicStore();
 
-  const scrollViewRef = useRef<ScrollView>(null);
   const { playMusic } = useAudio();
-  const { isDark, themeStyles } = useTheme();
+  const { themeStyles } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
-  const [isChoiceMade, setIsChoiceMade] = useState(false); // Prevents forward scrolling before a choice is made
+  const [isChoiceMade, setIsChoiceMade] = useState(false);
 
-  if (!comicPages || comicPages.length === 0) {
-    console.error("❌ Error: storyData is not loaded!");
-    return <Text>Loading story data...</Text>;
-  }
-  
+  // States for branch navigation (if needed)
+  const [activeBranch, setActiveBranch] = useState<number[] | null>(null);
+  const [activePostBranch, setActivePostBranch] = useState<number | null>(null);
+
+  // Keep track of which pages have been revealed.
+  // Initially, only pages 0, 1, 2, and 3 are revealed.
+  const [revealedPages, setRevealedPages] = useState<number[]>([0, 1, 2, 3]);
+
+  // Only render pages that have been revealed.
+  const pagesToRender: ComicPage[] = comicPages.filter((page) =>
+    revealedPages.includes(page.id)
+  );
+
+  // Create a lookup map for pagesToRender (page id -> index in rendered list)
+  const pagesLookup = React.useMemo(() => {
+    return pagesToRender.reduce((lookup, page, index) => {
+      lookup[page.id] = index;
+      return lookup;
+    }, {} as Record<number, number>);
+  }, [pagesToRender]);
+
   useEffect(() => {
-    const initialize = async () => {
+    (async () => {
       await loadSavedState();
-      if (scrollViewRef.current) {
-        scrollToPage(currentPage, false);
-      }
+      // Scroll to the current page (if already revealed)
+      scrollToPage(currentPage, false);
       await playMusic();
       setIsLoading(false);
-    };
-    initialize();
+    })();
   }, []);
 
+  // This effect triggers auto-scrolling whenever currentPage or pagesToRender change.
   useEffect(() => {
-    console.log("📜 Full storyData (Objects):", JSON.stringify(comicPages, null, 2));
-    const currentPageData = comicPages.find((page) => page.id === currentPage);
-    console.log("🔎 Searching for Page:", currentPage);
-    console.log(`📄 Current Page ID (from useComicStore): ${currentPage}`);
-    console.log(`🗂️ Found Page in storyData:`, currentPageData);
-    console.log(`🔍 Page Type: ${currentPageData?.type || 'Unknown'}`);
-    if (!currentPageData) {
-      console.error(`❌ Error: Page ID ${currentPage} not found in storyData!`);
-      return;
+    if (pagesToRender.some((page) => page.id === currentPage)) {
+      requestAnimationFrame(() => {
+        scrollToPage(currentPage, true);
+      });
     }
-  }, [currentPage]);
-  
-  if (isLoading) {
-    return <Text>Loading...</Text>;
-  }
+  }, [currentPage, pagesToRender]);
 
-  // Updated scrollToPage for zero-indexed pages
-  const scrollToPage = (page: number, animated: boolean = true) => {
-    if (!scrollViewRef.current || page < 0 || page >= comicPages.length) return;
-    if (page === currentPage) {
-      console.log('Skipping redundant scroll to page:', page);
-      return;
+  // When reaching the postBranch page, clear branch info so full story resumes.
+  useEffect(() => {
+    if (
+      activeBranch &&
+      activePostBranch !== null &&
+      currentPage === activePostBranch
+    ) {
+      setActiveBranch(null);
+      setActivePostBranch(null);
     }
-    console.log('🛠️ Scrolling to page:', page);
-    // Calculate offset without subtracting 1
-    const offset = isVertical ? screenHeight * page : screenWidth * page;
-    setTimeout(() => {
-      scrollViewRef.current?.scrollTo({
+  }, [currentPage, activeBranch, activePostBranch]);
+
+  // Given a page id, return its index in pagesToRender.
+  const getIndexForPageId = (pageId: number): number => {
+    return pagesLookup[pageId] ?? -1;
+  };
+
+  // Scroll to the given page id.
+  const scrollToPage = (pageId: number, animated: boolean = true) => {
+    const targetIndex = getIndexForPageId(pageId);
+    if (targetIndex === -1 || !scrollViewRef.current) return;
+    console.log("🛠️ Scrolling to page id:", pageId, "at index:", targetIndex);
+    const offset = isVertical ? screenHeight * targetIndex : screenWidth * targetIndex;
+    requestAnimationFrame(() => {
+      // Cast to any so TypeScript recognizes scrollTo.
+      (scrollViewRef.current as any).scrollTo({
         x: isVertical ? 0 : offset,
         y: isVertical ? offset : 0,
         animated,
       });
-    }, 100);
-  };  
+    });
+  };
 
+  // When a choice is made, update state and reveal the next pages.
   const handleChoice = (
     nextPage: number,
     effect: { morale: number },
     kerukaBondEffect: number = 0,
-    kehindeBondEffect: number = 0
+    kehindeBondEffect: number = 0,
+    branch?: number[],
+    postBranch?: number
   ) => {
     console.log(`✅ Choice Selected: Going to Page ${nextPage}`);
-    console.log(`📈 Morale Change: ${effect.morale}`);
-    console.log(`❤️ Keruka Bond Change: ${kerukaBondEffect}`);
-    console.log(`🖤 Kehinde Bond Change: ${kehindeBondEffect}`);
-  
     setMorale(morale + effect.morale);
     setKerukaBond(kerukaBond + kerukaBondEffect);
     setKehindeBond(kehindeBond + kehindeBondEffect);
-  
+
+    if (branch && branch.length > 0) {
+      setRevealedPages((prev) => {
+        const newPages = branch.filter((id) => !prev.includes(id));
+        return [...prev, ...newPages];
+      });
+    } else {
+      setRevealedPages((prev) =>
+        prev.includes(nextPage) ? prev : [...prev, nextPage]
+      );
+    }
+    if ((!branch || branch.length === 0) && postBranch !== undefined) {
+      setRevealedPages((prev) =>
+        prev.includes(postBranch) ? prev : [...prev, postBranch]
+      );
+    }
+    if (branch) {
+      setActiveBranch(branch);
+    }
+    if (postBranch !== undefined) {
+      setActivePostBranch(postBranch);
+    }
     setTimeout(() => {
       setCurrentPage(nextPage);
       setIsChoiceMade(true);
-      console.log(`🛠️ Calling setCurrentPage(${nextPage})`);
-      console.log(`🔓 Forward scrolling unlocked. Page should now be: ${nextPage}`);
-    }, 500);
-  };
-  
-  const handleScrollEnd = (event: any) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-    const currentPageData = comicPages.find((page) => page.id === currentPage);
-  
-    console.log(`📄 Current Page ID: ${currentPage}`);
-    console.log(`🔍 Page Type: ${currentPageData?.type || 'Unknown'}`);
-    console.log(`🛑 Is Choice Made? ${isChoiceMade}`);
-  
-    // Prevent forward scrolling on a choice page if no choice has been made
-    if (currentPageData?.type === 'choice' && !isChoiceMade && offsetY > 0) {
-      console.log("⛔ Preventing forward scroll on choice page.");
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    }
+      console.log(`🛠️ Navigated to page ${nextPage}`);
+    }, 300);
   };
 
-  // Updated handler to compute pageIndex without adding 1
+  // When scrolling ends, update the currentPage based on the rendered index.
   const handleMomentumScrollEnd = (event: any) => {
-    const offset = isVertical ? event.nativeEvent.contentOffset.y : event.nativeEvent.contentOffset.x;
+    const offset = isVertical
+      ? event.nativeEvent.contentOffset.y
+      : event.nativeEvent.contentOffset.x;
     const dimension = isVertical ? screenHeight : screenWidth;
-    const pageIndex = Math.round(offset / dimension);
-    setCurrentPage(pageIndex);
-    console.log(`Updated currentPage to: ${pageIndex}`);
+    const index = Math.round(offset / dimension);
+    if (index >= 0 && index < pagesToRender.length) {
+      const newPageId = pagesToRender[index].id;
+      // Only update if the new page differs from currentPage.
+      if (newPageId !== currentPage) {
+        setCurrentPage(newPageId);
+        console.log(`Updated currentPage to id: ${newPageId} (index ${index})`);
+      }
+    }
   };
 
-  const renderPage = (pageId: number) => {
-    console.log('Rendering page:', pageId);
-    const currentPageData = comicPages.find((page) => page.id === pageId);
-
-    if (!currentPageData) {
-      console.error("❌ Page not found:", pageId);
-      return <Text>No content found for this page</Text>;
+  const renderPage = (page: ComicPage) => {
+    if (page.type === "image") {
+      return <Image source={page.content} style={styles.image} />;
     }
-
-    console.log("📸 Image Content:", currentPageData.content);
-
-    // Render both "image" and "choice" types.
-    if (currentPageData.type === 'image' || currentPageData.type === 'choice') {
+    if (page.type === "choice") {
       return (
         <>
-          <Image source={currentPageData.content} style={styles.image} />
-          {currentPageData.type === 'choice' && (
-            <ChoiceButtons
-              choices={currentPageData.choices || []}
-              handleChoice={(
-                nextPage: number,
-                effect: { morale: number },
-                kerukaBondEffect?: number,
-                kehindeBondEffect?: number
-              ) => handleChoice(nextPage, effect, kerukaBondEffect, kehindeBondEffect)}
-            />
-          )}
+          <Image source={page.content} style={styles.image} />
+          <ChoiceButtons
+            choices={page.choices || []}
+            handleChoice={(
+              nextPage: number,
+              effect: { morale: number },
+              kerukaBondEffect?: number,
+              kehindeBondEffect?: number
+            ) => {
+              const chosen = page.choices?.find((choice) => choice.nextPage === nextPage);
+              handleChoice(
+                nextPage,
+                effect,
+                kerukaBondEffect,
+                kehindeBondEffect,
+                chosen?.branch,
+                chosen?.postBranch
+              );
+            }}
+          />
         </>
       );
     }
-
     return <Text>Invalid page type</Text>;
   };
 
@@ -171,51 +204,36 @@ export default function ComicReader() {
     page: {
       width: screenWidth,
       height: screenHeight,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     image: {
       width: screenWidth,
       height: screenHeight,
-      resizeMode: 'contain',
-    },
-    overlay: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'black',
-      pointerEvents: 'none',
-    },
-    choiceContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      resizeMode: "contain",
     },
   });
 
   return (
     <View style={[styles.container, { backgroundColor: themeStyles.backgroundColor }]}>
-      <ScrollView
+      <Animated.ScrollView
         ref={scrollViewRef}
         pagingEnabled
         horizontal={!isVertical}
         onMomentumScrollEnd={handleMomentumScrollEnd}
-        onScrollEndDrag={handleScrollEnd}
         scrollEventThrottle={16}
-        decelerationRate="fast"
+        decelerationRate="normal"
         snapToInterval={isVertical ? screenHeight : screenWidth}
         snapToAlignment="center"
         keyboardShouldPersistTaps="handled"
         removeClippedSubviews={true}
       >
-        {comicPages.map((page) => (
+        {pagesToRender.map((page) => (
           <View key={page.id} style={styles.page}>
-            {renderPage(page.id)}
+            {renderPage(page)}
           </View>
         ))}
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
