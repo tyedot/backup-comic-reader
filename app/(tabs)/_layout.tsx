@@ -8,8 +8,6 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import TabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import Settings from "./settings"; // Ensure correct import path
-
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -35,6 +33,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="comicmain"
+        options={{
+          title: "Comic",
+          tabBarIcon: ({ color }) => <Ionicons name="book" size={28} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="explore"
         options={{
           title: "Explore",
@@ -46,13 +51,6 @@ export default function TabLayout() {
         options={{
           title: "Settings",
           tabBarIcon: ({ color }) => <Ionicons name="settings" size={28} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="comicmain"
-        options={{
-        title: "Comic",
-        tabBarIcon: ({ color }) => <Ionicons name="book" size={28} color={color} />,
         }}
       />
     </Tabs>

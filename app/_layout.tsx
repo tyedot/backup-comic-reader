@@ -14,7 +14,6 @@ export default function RootLayout() {
     async function loadResourcesAndDataAsync() {
       try {
         console.log("🚀 Loading resources...");
-        // Add resource loading here if needed
       } catch (e) {
         console.warn(e);
       } finally {
@@ -26,18 +25,32 @@ export default function RootLayout() {
   }, []);
 
   if (!loaded) {
-    return null; // Still loading
+    return null;
   }
-
-  console.log("✅ RootLayout Rendered");
 
   return (
     <AudioProvider>
       <ThemeProvider>
         <NavigationContainer>
-          <Stack>
+          <Stack
+            screenOptions={{
+              // Make the header transparent so the background shows through
+              headerTransparent: true,
+              // Hide the title so the banner appears empty
+              headerTitle: '',
+              // Hide any back title text so only the back arrow is visible
+              headerBackTitleVisible: false,
+              // Set the back arrow color (and other elements) to white
+              headerTintColor: '#fff',
+            }}
+          >
+            {/* Your Tabs navigator with its header hidden */}
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="settings" options={{ title: "Settings" }} />
+            {/* Standalone screens – they will use the default header options above */}
+            <Stack.Screen name="about" />
+            <Stack.Screen name="achievements" />
+            <Stack.Screen name="shop" />
+            <Stack.Screen name="settings" />
             <Stack.Screen name="+not-found" />
           </Stack>
           <StatusBar style="auto" />
