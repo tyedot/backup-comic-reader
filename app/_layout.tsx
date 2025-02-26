@@ -1,4 +1,6 @@
+// app/_layout.tsx
 import React, { useEffect, useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -12,7 +14,7 @@ export default function RootLayout() {
     async function loadResourcesAndDataAsync() {
       try {
         console.log("🚀 Loading resources...");
-        // Add any resource loading if needed here
+        // Add resource loading here if needed
       } catch (e) {
         console.warn(e);
       } finally {
@@ -20,12 +22,11 @@ export default function RootLayout() {
         SplashScreen.hideAsync();
       }
     }
-
     loadResourcesAndDataAsync();
   }, []);
 
   if (!loaded) {
-    return null; // Show splash screen until resources are loaded
+    return null; // Still loading
   }
 
   console.log("✅ RootLayout Rendered");
@@ -33,12 +34,14 @@ export default function RootLayout() {
   return (
     <AudioProvider>
       <ThemeProvider>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="settings" options={{ title: "Settings" }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="auto" />
+        <NavigationContainer>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="settings" options={{ title: "Settings" }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+          <StatusBar style="auto" />
+        </NavigationContainer>
       </ThemeProvider>
     </AudioProvider>
   );

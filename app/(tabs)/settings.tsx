@@ -10,6 +10,7 @@ import { useTheme } from "../../context/ThemeContext";
 
 export default function Settings() {
   const [musicVolume, setMusicVolume] = useState(1);
+  // Destructure resetGame along with other properties
   const { isVertical, setIsVertical, resetGame } = useComicStore();
   const router = useRouter();
   const { isPlaying, playMusic, pauseMusic, setVolume } = useAudio();
@@ -58,17 +59,6 @@ export default function Settings() {
     }
   };
 
-  const handleResetGame = async () => {
-    // Call the resetGame function from your store.
-    await resetGame();
-    console.log("🗑️ Game has been reset!");
-    // Optionally, if you want to clear additional cached data, do so here.
-    // Since ComicReader listens for changes in the store's reset flag (or is keyed by it),
-    // it will reinitialize its local state without navigation.
-    // If your ComicReader is not keyed by resetFlag, you might call router.replace("/comic")
-    // to force a remount.
-  };
-
   return (
     <View style={[styles.container, { backgroundColor: themeStyles.backgroundColor }]}>
       <Text style={[styles.title, { color: isDark ? "#fff" : "#000" }]}>Settings</Text>
@@ -106,7 +96,13 @@ export default function Settings() {
 
       <Button title={isPlaying ? "Pause Music" : "Play Music"} onPress={toggleMusicPlayback} />
       <Button title="Go Back" onPress={() => router.back()} />
-      <Button title="Restart Game" onPress={handleResetGame} />
+      <Button
+        title="Restart Game"
+        onPress={async () => {
+          await resetGame();
+          console.log("🆕 Game reset complete!");
+        }}
+      />
 
       {isDark && (
         <View

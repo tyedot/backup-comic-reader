@@ -48,6 +48,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Ionicons name="settings" size={28} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="comicmain"
+        options={{
+        title: "Comic",
+        tabBarIcon: ({ color }) => <Ionicons name="book" size={28} color={color} />,
+        }}
+      />
     </Tabs>
   );
 }

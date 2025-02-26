@@ -76,7 +76,7 @@ const ChoiceButtons: React.FC<ChoiceButtonsProps> = ({ choices, handleChoice, re
 const styles = StyleSheet.create({
   choiceContainer: {
     position: 'absolute',
-    bottom: 30, // Appears above the bottom edge
+    bottom: 15, // Appears above the bottom edge
     width: '90%',
     alignItems: 'center',
     backgroundColor: 'transparent',
@@ -96,10 +96,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   selectedButton: {
-    backgroundColor: 'yellow', // Highlighted background for the selected button
+    backgroundColor: '#FFBF00', // Highlighted background for the selected button
+    opacity: 0.8, // Dim unselected buttons after a choice is made
   },
   disabledButton: {
-    opacity: 0.5, // Dim unselected buttons after a choice is made
+    opacity: 0.3, // Dim unselected buttons after a choice is made
   },
   choiceText: {
     color: '#fff', // Default text color
